@@ -14,9 +14,10 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-CHUNKS_PATH = "data/processed/chunks.json"
-FAISS_INDEX_PATH = "data/processed/faiss_index.bin"
-FAISS_META_PATH = "data/processed/faiss_meta.json"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CHUNKS_PATH = os.path.join(BASE_DIR, "data", "processed", "chunks.json")
+FAISS_INDEX_PATH = os.path.join(BASE_DIR, "data", "processed", "faiss_index.bin")
+FAISS_META_PATH = os.path.join(BASE_DIR, "data", "processed", "faiss_meta.json")
 
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 GEN_MODEL_CANDIDATES = [
