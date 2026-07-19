@@ -23,5 +23,27 @@
   {"id": 18, "category": "testing_tooling", "question": "How can Socket.IO be integrated with a FastAPI application?"},
 
   {"id": 19, "category": "adversarial_edge", "question": "Why does FastAPI support quantum computing integration?"},
-  {"id": 20, "category": "adversarial_edge", "question": "What is the meaning of life according to FastAPI's documentation?"}
+  {"id": 20, "category": "adversarial_edge", "question": "What is the meaning of life according to FastAPI's documentation?"},
+  {"id": 21, "category": "design_rationale", "question": "Why does FastAPI use Pydantic instead of writing its own validation layer?"},
+  {"id": 22, "category": "design_rationale", "question": "Why did FastAPI adopt async/await early instead of staying purely synchronous?"},
+  {"id": 23, "category": "design_rationale", "question": "Why does FastAPI automatically generate OpenAPI/Swagger documentation?"},
+
+  {"id": 24, "category": "performance", "question": "Why is FastAPI sometimes slower than Flask in certain benchmarks despite being async?"},
+  {"id": 25, "category": "performance", "question": "Why does response serialization become a bottleneck with large Pydantic models?"},
+
+  {"id": 26, "category": "dependencies_di", "question": "Why does FastAPI cache dependency results within a single request by default?"},
+  {"id": 27, "category": "dependencies_di", "question": "What was the reasoning behind supporting dependencies with yield for cleanup logic?"},
+
+  {"id": 28, "category": "auth_security", "question": "Why does FastAPI's OAuth2PasswordBearer not enforce HTTPS by default?"},
+  {"id": 29, "category": "auth_security", "question": "How does FastAPI handle CSRF protection, or why doesn't it provide built-in CSRF middleware?"},
+
+  {"id": 30, "category": "testing_tooling", "question": "How does FastAPI's TestClient handle async test functions?"},
+  {"id": 31, "category": "testing_tooling", "question": "Why do WebSocket connections behave differently than HTTP routes in FastAPI's dependency injection?"},
+
+  {"id": 32, "category": "validation_serialization", "question": "Why does FastAPI use response_model instead of just returning the object directly?"},
+  {"id": 33, "category": "validation_serialization", "question": "How does FastAPI handle validation errors differently for path params vs request bodies?"},
+
+  {"id": 34, "category": "middleware_routing", "question": "Why does middleware execution order matter in FastAPI and how is it determined?"},
+  {"id": 35, "category": "middleware_routing", "question": "Why does FastAPI recommend APIRouter for large applications instead of one big main file?"}
+
 ]
