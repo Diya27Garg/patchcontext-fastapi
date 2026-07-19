@@ -174,8 +174,21 @@ def split_into_claims(text: str):
     """
     Split answer text into clean claim candidates, avoiding markdown artifacts.
     Splits on newlines first (so bullet points don't merge together), then
-    strips markdown bullet/bold markers before further sentence splitting.
+    strips markdown bullet/bold markers, then splits on sentence boundaries,
+    then further splits long compound sentences on internal clause
+    boundaries so the NLI guard judges each clause independently instead of
+    one giant multi-claim blob.
     """
+    # Conjunctions/markers that commonly join two independent claims within
+    # one sentence. Matched only when preceded by a comma or semicolon, to
+    # avoid splitting on these words mid-clause (e.g. "systems like .NET").
+    CLAUSE_SPLIT_PATTERN = re.compile(
+        r'(?:,\s+|;\s+)(?=(?:while|however|although|though|whereas|but|'
+        r'in contrast|conversely|meanwhile|additionally|furthermore|'
+        r'on the other hand)\b)',
+        flags=re.IGNORECASE,
+    )
+ 
     claims = []
     for line in text.split("\n"):
         line = line.strip()
@@ -187,7 +200,19 @@ def split_into_claims(text: str):
             continue
         for sentence in re.split(r'(?<=[.!?])\s+', line):
             sentence = sentence.strip()
-            if sentence:
+            if not sentence:
+                continue
+            # Further split long compound sentences on internal clause
+            # boundaries (only if the sentence is long enough that it's
+            # likely carrying more than one claim — short sentences are
+            # left untouched to avoid over-splitting).
+            if len(sentence) > 120:
+                sub_clauses = CLAUSE_SPLIT_PATTERN.split(sentence)
+                for clause in sub_clauses:
+                    clause = clause.strip()
+                    if clause:
+                        claims.append(clause)
+            else:
                 claims.append(sentence)
     return claims
 
