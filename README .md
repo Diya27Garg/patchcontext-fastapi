@@ -1,6 +1,6 @@
 # PatchContext
 
-**🔗 Live demo:** [PASTE YOUR STREAMLIT CLOUD URL HERE]
+**🔗 Live demo:** https://patchcontext-fastapi-6qlpg8epyftunfjrp5pppg.streamlit.app/
 
 > **Note:** This repository contains two prototypes built during development.
 > **`prototype-2-local/` is the final, current version** and the one that
