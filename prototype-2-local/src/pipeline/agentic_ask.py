@@ -1,3 +1,4 @@
+print(">>> LOADED FIXED VERSION OF agentic_ask.py <<<")
 import os
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 
@@ -150,6 +151,24 @@ def ask_with_self_correction(query: str, max_corrections: int = 1):
     trace["final_answer"] = current_answer
     trace["final_flagged"] = current_flagged
     trace["total_correction_rounds"] = len(trace["iterations"]) - 1
+
+    # --- Fields expected by the Streamlit UI (app.py) ---
+    trace["sources"] = [
+        {
+            "label": f"[{i+1}]",
+            "source_type": c.get("source_type"),
+            "source_number": c.get("source_number"),
+            "title": c.get("title", ""),
+            "url": c.get("url", "#"),
+        }
+        for i, c in enumerate(all_chunks_used)
+    ]
+    trace["flagged_claims"] = current_flagged
+
+    accepted_any = any(it.get("accepted") is True for it in trace["iterations"])
+    rejected_any = any(it.get("accepted") is False for it in trace["iterations"])
+    trace["corrected"] = accepted_any
+    trace["rolled_back"] = rejected_any and not accepted_any
 
     return trace
 

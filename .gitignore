@@ -5,3 +5,5 @@ __pycache__/
 **/data/raw/
 .ipynb_checkpoints/
 faiss_index/
+**/data/processed/faiss_index.bin
+**/data/processed/faiss_meta.json
