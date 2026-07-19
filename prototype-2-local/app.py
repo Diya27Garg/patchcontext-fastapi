@@ -1,5 +1,8 @@
+import os
 import sys
-sys.path.insert(0, "src/pipeline")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(BASE_DIR, "src", "pipeline"))
 
 import time
 import random
@@ -32,11 +35,11 @@ st.write("")
 # Session state setup
 # ============================================================
 if "history" not in st.session_state:
-    st.session_state.history = []
+    st.session_state.history = []          # list of dicts: question, trace, feedback
 if "mode" not in st.session_state:
-    st.session_state.mode = "ask"
+    st.session_state.mode = "ask"          # "ask" or "result"
 if "active_idx" not in st.session_state:
-    st.session_state.active_idx = None
+    st.session_state.active_idx = None     # index into history currently displayed
 if "pending_question" not in st.session_state:
     st.session_state.pending_question = ""
 
@@ -62,31 +65,6 @@ FASTAPI_NOTE = (
     "of its design decisions trace back to how Python's typing system works, "
     "not just arbitrary framework choices."
 )
-
-SOURCE_TYPE_LABELS = {
-    "issue": "Issue",
-    "pull_request": "PR",
-    "commit": "Commit",
-}
-
-
-def format_source_label(s: dict) -> str:
-    """Build a readable, descriptive label for a source, e.g. 'Issue #504 — Dependency Injection - Singleton?'"""
-    stype = SOURCE_TYPE_LABELS.get(s.get("source_type"), s.get("source_type", "Source"))
-    number = s.get("source_number")
-    title = s.get("title", "").strip()
-
-    if number is not None:
-        base = f"{stype} #{number}"
-    else:
-        base = stype
-
-    if title:
-        # Trim overly long titles so the citation line doesn't wrap awkwardly
-        short_title = title if len(title) <= 70 else title[:67] + "…"
-        return f"{base} — {short_title}"
-    return base
-
 
 # ============================================================
 # Helper: run a question through the backend with a bit of personality
@@ -196,17 +174,16 @@ else:
             else:
                 st.caption("No revision was needed — first-pass answer was accepted as-is.")
 
-        # ---------- Sources (descriptive, clickable) ----------
+        # ---------- Sources ----------
         sources = trace.get("sources", [])
         if sources:
             st.divider()
             st.subheader("Sources")
             for s in sources:
                 if isinstance(s, dict):
-                    display_label = format_source_label(s)
+                    label = s.get("label") or s.get("title") or s.get("url", "source")
                     url = s.get("url", "#")
-                    citation_tag = s.get("label", "")
-                    st.markdown(f"- **{citation_tag}** [{display_label}]({url})")
+                    st.markdown(f"- [{label}]({url})")
                 else:
                     st.markdown(f"- {s}")
 
@@ -216,13 +193,7 @@ else:
             st.divider()
             st.subheader("⚠️ Flagged by hallucination guard")
             for f in flags:
-                if isinstance(f, dict):
-                    citation = f.get("citation", "")
-                    sentence = f.get("sentence", "")
-                    label = f.get("label", "")
-                    st.warning(f"{citation} \"{sentence}\"  \n*guard label: {label}*")
-                else:
-                    st.warning(f)
+                st.warning(f)
 
     # ---------- Feedback + next question ----------
     st.divider()
