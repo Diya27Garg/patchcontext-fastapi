@@ -257,7 +257,6 @@ questions to try and a short primer on FastAPI itself.
 > way to reproduce results, since the hosted version depends on the deployed
 > environment's own resource limits.
 
-![Streamlit UI screenshot](docs/streamlit_ui.png)
 
 ---
 
