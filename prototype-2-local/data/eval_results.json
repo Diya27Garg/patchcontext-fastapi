@@ -3,7 +3,7 @@
     "id": 1,
     "category": "design_rationale",
     "question": "Why does FastAPI use Depends() for dependency injection?",
-    "answer": "FastAPI utilizes `Depends` as its primary mechanism for dependency injection, a pattern that has become increasingly common and popularized through the framework [1]. \n\nRegarding the design and implementation of this system:\n\n*   **Coincidental Features:** FastAPI does not have explicit, built-in support for certain complex patterns like parameterized dependencies. Such features exist \"purely by coincidence\" because the system allows developers to use Python classes in ways that are compatible with the `Depends` functionality [5].\n*   **Performance Optimization:** To improve efficiency within the dependency resolution system, FastAPI implements error caching. This prevents redundant validation checks by caching dependencies that have already failed, using a sentinel `_CachedError` marker [4].\n*   **Third-Party Alternatives:** While `Depends` is a core feature, it may not be sufficient for all use cases. When complex dependency graphs or specific architectural requirements (such as the Dependency Inversion Principle) are needed, the FastAPI documentation suggests that using a third-party IoC (Inversion of Control) library—such as Dishka—may be more appropriate [1].\n*   **Integration Philosophy:** FastAPI's design generally prioritizes stability and clear public APIs. When internal utilities (such as `is_coroutine_callable`) are moved or refactored, the maintainers clarify that such internals are not part of the documented public API, and they encourage third-party libraries to request official, supported ways to achieve their integration goals [6].",
+    "answer": "FastAPI uses the `Depends` mechanism as its built-in dependency injection (DI) system [1]. This system is a core part of what has made FastAPI popular [1, 3]. \n\nRegarding the design and nature of this feature:\n\n* **Technical Nature**: FastAPI does not have an explicit, hardcoded feature for \"parameterized dependencies.\" Instead, this functionality exists as a natural consequence of Python's design, which allows classes to be defined in ways that FastAPI treats as functions, enabling them to work with `Depends` [5].\n* **Caching and Optimization**: The dependency resolution system includes caching mechanisms to optimize performance. For instance, the system tracks and caches error states for dependencies (using a `_CachedError` sentinel) to prevent redundant validation checks and the propagation of cascading errors when a dependency has already failed [4].\n* **Scope and Evolution**: While `Depends` is sufficient for many use cases, FastAPI is actively evolving to handle more complex scenarios, such as introducing support for specific dependency scopes (e.g., `scope=\"request\"`) to manage the lifecycle of dependencies like those using `yield` [6].\n* **Integration with Third-Party Libraries**: When a user's requirements exceed the capabilities of the built-in `Depends` mechanism—such as when needing to resolve complex dependency graphs or adhere strictly to the Dependency Inversion Principle—FastAPI documentation encourages the use of third-party IoC (Inversion of Control) containers like **Dishka** [1].",
     "sources": [
       {
         "label": "[1]",
@@ -44,37 +44,31 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "FastAPI utilizes `Depends` as its primary mechanism for dependency injection, a pattern that has become increasingly common and popularized through the framework .",
-        "citation": "[1]",
-        "label": "neutral",
-        "confidence": 0.732
-      },
-      {
-        "sentence": "Such features exist \"purely by coincidence\" because the system allows developers to use Python classes in ways that are compatible with the `Depends` functionality .",
+        "sentence": "Technical Nature: FastAPI does not have an explicit, hardcoded feature for \"parameterized dependencies.\" Instead, this functionality exists as a natural consequence of Python's design, which allows classes to be defined in ways that FastAPI treats as functions, enabling them to work with `Depends` .",
         "citation": "[5]",
         "label": "contradiction",
-        "confidence": 0.998
+        "confidence": 0.994
       },
       {
-        "sentence": "When internal utilities (such as `is_coroutine_callable`) are moved or refactored, the maintainers clarify that such internals are not part of the documented public API, and they encourage third-party libraries to request official, supported ways to achieve their integration goals .",
+        "sentence": "Scope and Evolution: While `Depends` is sufficient for many use cases, FastAPI is actively evolving to handle more complex scenarios, such as introducing support for specific dependency scopes (e.g., `scope=\"request\"`) to manage the lifecycle of dependencies like those using `yield` .",
         "citation": "[6]",
         "label": "neutral",
-        "confidence": 0.998
+        "confidence": 0.993
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 6,
+    "guard_true_positives": 0,
+    "guard_false_positives": 2,
+    "missed_hallucinations": 0,
+    "notes": "Both flagged claims confirmed SUPPORTED after reading sources. Claim1 (issue #1655): Mause's comment literally says 'fastapi has no support for parameterized dependencies at all - that feature exists purely by coincidence, because python allows you to define classes that fastapi considers functions...' -> exact match, false positive (NLI likely tripped on negation). Claim2 (PR #14262): PR description explicitly adds 'Depends(func, scope=\"request\")' -> false positive."
   },
   {
     "id": 2,
     "category": "design_rationale",
     "question": "Why was there a debate about singleton dependencies?",
-    "answer": "The debate regarding singleton dependencies in FastAPI stemmed from users seeking a way to manage dependencies with a lifespan longer than a single request [3, 5].\n\nThe primary points of the discussion were:\n\n*   **Confusion over terminology:** Participants debated the definition of a \"singleton.\" Some defined it as a forced global instance using metaclass logic [1], while others were interested in \"lifetime-scoped\" dependencies—instances created at application startup and cleaned up at shutdown [1].\n*   **Performance and resource concerns:** Users expressed concerns that the current dependency injection system re-instantiates classes on every request [2, 3]. This raised issues for complex dependencies, such as database connections, where repeatedly opening and closing connections per request is inefficient [3].\n*   **Desired functionality:** Users suggested that the dependency injection system should support different scopes (e.g., request-scoped vs. global-scoped) [5]. Some compared this to frameworks like .NET Core or Spring, which offer explicit service lifetimes [3, 5].\n*   **Existing workarounds:** Participants noted that one could instantiate dependencies during the `startup` event [5] or use custom decorators to handle application-lifetime dependencies [4].\n*   **Maintainer perspective:** Tiangolo suggested that some requests for \"singletons\" might already be covered by existing features for classes as dependencies, but invited users to provide minimal, self-contained examples if they were looking for functionality beyond what is currently supported [6].",
+    "answer": "The debate regarding singleton dependencies in FastAPI stemmed from differing interpretations of the term \"singleton\" and the desire for improved dependency lifecycles [1, 6]. \n\nUsers argued that the current dependency injection system lacked an option to maintain a \"global store\" or shared state across multiple requests [3, 5]. Specifically, participants noted that while `use_cache=True` prevents a dependency from being re-instantiated within a *single* request, it does not persist across *different* requests, leading to inefficiencies when dependencies involve expensive operations like database connections or loading large datasets [3, 5, 6]. Some participants suggested that the framework should support different service lifetimes—such as per-request, global, or per-user—similar to systems like .NET Core or Spring [3, 5].\n\nIn contrast, others clarified the distinction between a technical \"singleton\" (a class that uses metaclass logic to ensure only one instance ever exists) and a \"lifetime-scoped\" dependency (an instance created at application startup that persists until shutdown) [1]. The project creator, @tiangolo, noted that while some use cases for parameterized dependencies were already supported by the existing documentation, other requests might be referring to different concepts, and invited users to provide minimal, self-contained examples of the features they envisioned [6].",
     "sources": [
       {
         "label": "[1]",
@@ -115,43 +109,25 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "Confusion over terminology: Participants debated the definition of a \"singleton.\" Some defined it as a forced global instance using metaclass logic",
+        "sentence": "In contrast, others clarified the distinction between a technical \"singleton\" (a class that uses metaclass logic to ensure only one instance ever exists) and a \"lifetime-scoped\" dependency (an instance created at application startup that persists until shutdown) .",
         "citation": "[1]",
         "label": "contradiction",
-        "confidence": 0.844
-      },
-      {
-        "sentence": "while others were interested in \"lifetime-scoped\" dependencies—instances created at application startup and cleaned up at shutdown .",
-        "citation": "[1]",
-        "label": "contradiction",
-        "confidence": 0.768
-      },
-      {
-        "sentence": "global-scoped) .",
-        "citation": "[5]",
-        "label": "neutral",
-        "confidence": 0.987
-      },
-      {
-        "sentence": "Existing workarounds: Participants noted that one could instantiate dependencies during the `startup` event  or use custom decorators to handle application-lifetime dependencies .",
-        "citation": "[4]",
-        "label": "contradiction",
-        "confidence": 0.738
+        "confidence": 0.831
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 6,
+    "guard_true_positives": 0,
+    "guard_false_positives": 1,
+    "missed_hallucinations": 0,
+    "notes": "Flagged claim confirmed SUPPORTED. dmontagu's comment in issue #504 draws exactly this distinction: metaclass Singleton pattern vs 'a (long-lived) instance created at application startup and cleaned up on shutdown'. False positive."
   },
   {
     "id": 3,
     "category": "design_rationale",
     "question": "Why does FastAPI use startup and shutdown events instead of always using context managers?",
-    "answer": "FastAPI's startup and shutdown events were originally taken almost without modification from Starlette [1]. Because of this, the framework initially had no native maintenance burden for these features, whereas adding support for context managers would introduce new code that requires ongoing maintenance [1].\n\nWhile there has been community interest in using context managers or an \"exit stack\" for these lifecycle tasks—as they may be more appropriate for managing resources like database connections [1]—historical discussions noted that Starlette's existing implementation was quite limited [1]. Furthermore, because these handlers relate to ASGI lifespan events, they are distinct from the HTTP request flow, meaning they cannot be used to implement custom events [5].\n\nMore recently, FastAPI has moved away from the `@app.on_event` decorator, officially deprecating it in favor of the newer \"lifespan\" event handling system [3].",
+    "answer": "FastAPI's existing startup and shutdown event handling is derived almost directly from Starlette [1]. When these features were originally developed, they were implemented without significant modifications to the underlying Starlette code [1].\n\nWhile there has been internal discussion that using context managers or an `ExitStack` might be a more logical approach for managing application state than separate events, adopting them would change the maintenance requirements for the project—moving from a feature that requires virtually no maintenance to one that requires active management [1].\n\nAdditionally, the startup and shutdown events correspond to specific ASGI lifespan events [5]. These are distinct from the standard HTTP flow and are not intended to handle arbitrary custom events [5].\n\nMore recently, the framework has moved toward deprecating the `@app.on_event` decorator in favor of the newer \"lifespan\" event handling system [3].",
     "sources": [
       {
         "label": "[1]",
@@ -192,25 +168,25 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "More recently, FastAPI has moved away from the `@app.on_event` decorator, officially deprecating it in favor of the newer \"lifespan\" event handling system .",
+        "sentence": "More recently, the framework has moved toward deprecating the `@app.on_event` decorator in favor of the newer \"lifespan\" event handling system .",
         "citation": "[3]",
         "label": "contradiction",
-        "confidence": 0.574
+        "confidence": 0.844
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 6,
+    "guard_true_positives": 0,
+    "guard_false_positives": 1,
+    "missed_hallucinations": 0,
+    "notes": "Flagged claim confirmed SUPPORTED. PR #13253 description explicitly states it updates docs to reflect deprecation of @app.on_event in favor of lifespan. False positive."
   },
   {
     "id": 4,
     "category": "design_rationale",
     "question": "Why did FastAPI not add first-class msgpack response support?",
-    "answer": "The provided context does not explicitly state an official reason why FastAPI did not add first-class support for MessagePack. However, the discussion indicates that developers found effective alternatives to achieve this functionality outside of the core framework.\n\nSpecifically:\n\n*   **Middleware Solutions:** Community members developed external tools such as `msgpack-asgi`, which provides \"drop-in MessagePack support to/from JSON\" [3]. This approach allows developers to handle content negotiation (e.g., when a client requests `application/x-msgpack`) at the ASGI layer, which works with FastAPI and other ASGI applications [3].\n*   **Custom Implementation:** Contributors demonstrated that MessagePack support could be implemented through custom response classes (e.g., `MsgpackResponse`) and custom routes (`MsgpackRoute`) by adapting FastAPI's existing extensibility patterns [4].\n*   **Documentation and Guidance:** FastAPI maintainers suggested that users could adapt existing documentation examples—such as those demonstrating how to handle gzip or custom requests—to accommodate specific needs like MessagePack [6].\n\nIn other cases where proposed features are deemed unnecessary, the maintainers have pointed to internal changes that render those specific requests obsolete [2]. However, regarding MessagePack, the conversation centered on using middleware or custom routing logic rather than an explicit rejection or integration into the core framework [3, 4].",
+    "answer": "The provided context does not explicitly state a policy or reason why FastAPI chose not to add first-class support for MessagePack. However, the discussion regarding feature requests for MessagePack support suggests that the community addressed the requirement through alternative means:\n\n*   **ASGI Middleware:** Instead of building support directly into the core framework, a contributor created `msgpack-asgi`, an ASGI middleware that provides drop-in support for MessagePack [3]. This approach allows for functionality such as content negotiation (encoding responses as `application/x-msgpack` if requested by the client) [3].\n*   **Custom Implementation/Extensibility:** Contributors noted that users can adapt existing patterns for custom request and response handling (similar to how gzip support is implemented) to handle MessagePack [4, 6]. \n*   **Encouragement of Custom Solutions:** Discussions indicate that while the documentation might not cover every complex scenario, the framework is designed to be adapted by developers to meet specific needs [6].\n\nRegarding other proposed features, the provided context shows that some proposed additions, such as `PydanticJSONResponse`, were ultimately deemed unnecessary because core changes in FastAPI (e.g., bypassing `json_serializer` to serialize data on the Pydantic side when a response model is specified) rendered them redundant [2].",
     "sources": [
       {
         "label": "[1]",
@@ -251,25 +227,31 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "Documentation and Guidance: FastAPI maintainers suggested that users could adapt existing documentation examples—such as those demonstrating how to handle gzip or custom requests—to accommodate specific needs like MessagePack .",
+        "sentence": "ASGI Middleware: Instead of building support directly into the core framework, a contributor created `msgpack-asgi`, an ASGI middleware that provides drop-in support for MessagePack .",
+        "citation": "[3]",
+        "label": "contradiction",
+        "confidence": 0.39
+      },
+      {
+        "sentence": "Encouragement of Custom Solutions: Discussions indicate that while the documentation might not cover every complex scenario, the framework is designed to be adapted by developers to meet specific needs .",
         "citation": "[6]",
         "label": "neutral",
-        "confidence": 0.895
+        "confidence": 0.876
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
+    "total_citable_claims": 5,
+    "guard_true_positives": 1,
+    "guard_false_positives": 1,
+    "missed_hallucinations": 0,
+    "notes": "Claim1 (msgpack-asgi, issue #521): confirmed true, florimondmanca created it, tiangolo thanked/closed issue -> false positive. Claim2 ('Encouragement of Custom Solutions'): vague generic filler not tied to any specific statement in the source -> guard correctly flagged, true positive."
   },
   {
     "id": 5,
     "category": "design_rationale",
     "question": "Why is CORS handled through middleware instead of being built into route decorators?",
-    "answer": "CORS is handled through `CORSMiddleware` in FastAPI because it is a global middleware component designed to handle preflighted `OPTIONS` requests [5].\n\nWhile users have expressed interest in applying different middleware configurations to different routes or paths—specifically regarding CORS requirements—the provided context indicates that middleware is generally applied at the application level [1, 3, 4, 6]. \n\nRegarding the design choice of keeping configuration in decorators versus centralized routing, discussions within the FastAPI/Starlette ecosystem suggest that while decorators are preferred by some for tightly coupling endpoints with metadata like response models, others prefer centralized routing for better code navigation and maintenance [2]. However, there is no explicit documentation or discussion in the provided context that explains a deliberate decision to move CORS logic into route decorators; rather, the existing design relies on `CORSMiddleware` to manage these cross-origin concerns [5].",
+    "answer": "CORS is handled through `CORSMiddleware` in FastAPI because it is designed to manage preflighted requests [5]. Middleware allows for the global application of these headers, which is the standard approach for handling CORS in the framework [5]. \n\nThe provided context does not offer a direct explanation for why CORS is not built into route decorators, though discussions note that `CORSMiddleware` is the existing mechanism for handling preflighted requests [5]. Users have expressed interest in applying different CORS configurations for different routes [1], and some have encountered difficulties when attempting to use middleware with `APIRouter` [4], [6]. While there is a preference for declarative styles that tightly couple endpoints with metadata like response models [2], the current architecture relies on middleware to address CORS requirements globally [5].",
     "sources": [
       {
         "label": "[1]",
@@ -310,37 +292,49 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "CORS is handled through `CORSMiddleware` in FastAPI because it is a global middleware component designed to handle preflighted `OPTIONS` requests .",
+        "sentence": "CORS is handled through `CORSMiddleware` in FastAPI because it is designed to manage preflighted requests .",
         "citation": "[5]",
         "label": "neutral",
-        "confidence": 0.994
+        "confidence": 0.995
       },
       {
-        "sentence": "Regarding the design choice of keeping configuration in decorators versus centralized routing, discussions within the FastAPI/Starlette ecosystem suggest that while decorators are preferred by some for tightly coupling endpoints with metadata like response models, others prefer centralized routing for better code navigation and maintenance .",
+        "sentence": "Middleware allows for the global application of these headers, which is the standard approach for handling CORS in the framework .",
+        "citation": "[5]",
+        "label": "neutral",
+        "confidence": 0.995
+      },
+      {
+        "sentence": "The provided context does not offer a direct explanation for why CORS is not built into route decorators, though discussions note that `CORSMiddleware` is the existing mechanism for handling preflighted requests .",
+        "citation": "[5]",
+        "label": "neutral",
+        "confidence": 0.975
+      },
+      {
+        "sentence": "While there is a preference for declarative styles that tightly couple endpoints with metadata like response models , the current architecture relies on middleware to address CORS requirements globally .",
         "citation": "[2]",
-        "label": "neutral",
-        "confidence": 0.966
+        "label": "contradiction",
+        "confidence": 0.553
       },
       {
-        "sentence": "However, there is no explicit documentation or discussion in the provided context that explains a deliberate decision to move CORS logic into route decorators; rather, the existing design relies on `CORSMiddleware` to manage these cross-origin concerns .",
+        "sentence": "While there is a preference for declarative styles that tightly couple endpoints with metadata like response models , the current architecture relies on middleware to address CORS requirements globally .",
         "citation": "[5]",
         "label": "neutral",
-        "confidence": 0.991
+        "confidence": 0.995
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
+    "total_citable_claims": 6,
+    "guard_true_positives": 4,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "All CORS claims are citation mismatches. PR #10861 is about adding an auto-generated OPTIONS route (tangential to preflight, never mentions CORSMiddleware). Issue #687 is about decorator-vs-declarative routing style, unrelated to CORS. The model fabricated a causal link between response-model declarative preference and CORS middleware. Guard correctly flagged all of these -- true positives (4 distinct flagged sentences, claims 4 & 5 are the same sentence cited twice)."
   },
   {
     "id": 6,
     "category": "performance",
     "question": "Why does memory usage grow over time in some FastAPI deployments?",
-    "answer": "The provided context does not offer a definitive explanation for why memory usage grows over time in some FastAPI deployments; instead, it captures discussions regarding reports of potential memory leaks and performance concerns.\n\nKey points from the documented discussions include:\n\n*   **Difficulty in Reproducing Issues:** Reports of memory growth are often difficult to reproduce. Contributors have noted that they could not replicate memory issues on their own machines or in test environments [3]. In another instance, testing between different FastAPI versions (0.68.2 vs 0.75.0) showed memory usage settling at similar levels after 1 million requests [5].\n*   **Version-Specific Observations:** Some users have reported observing differences in memory behavior across different versions of FastAPI. For example, one user noted a sharp increase in memory usage following the introduction of AnyIO in FastAPI version 0.69.0, which they did not experience prior to that update [5].\n*   **Complexity and Environmental Factors:** Users experiencing these issues often find them in complex production services, making it challenging to isolate the behavior to a simple, reproducible service [2]. Some maintainers have suggested that such problems may be related to specific environment configurations rather than the framework itself [3].\n*   **External Factors:** In discussions regarding performance and resource usage, it has been noted that benchmarking results can be heavily influenced by factors such as caching strategies [6]. Additionally, the framework has a single maintainer, which can impact the speed at which complex issue investigations are addressed [6].",
+    "answer": "Based on the provided GitHub issue discussions, there is no definitive consensus or single identified cause for why memory usage grows over time in some FastAPI deployments. The current state of investigations is as follows:\n\n*   **Difficulty in Reproduction:** Developers have struggled to reduce reported memory issues to simple, reproducible services [2]. Some maintainers and contributors have been unable to reproduce reported memory growth in their own environments [3], [5].\n*   **Environmental Factors:** It has been suggested that persistent memory growth in production environments might be linked to specific machine or environment setups rather than the framework itself [3]. \n*   **Version and Dependency Changes:** Users have reported observing different memory behaviors across FastAPI versions. For example, some users noted changes in memory behavior following the introduction of AnyIO in version 0.69.0 [5]. However, performance benchmarks comparing versions (such as 0.68.2 vs 0.75.0) have also shown cases where memory usage settles at similar levels after a high volume of requests [5].\n*   **Reported Symptoms:** Users experiencing these issues describe scenarios where memory utilization climbs over time, seemingly without the garbage collector releasing objects, eventually leading to Out of Memory (OOM) errors in containers [1], [2].",
     "sources": [
       {
         "label": "[1]",
@@ -381,37 +375,31 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "Complexity and Environmental Factors: Users experiencing these issues often find them in complex production services, making it challenging to isolate the behavior to a simple, reproducible service .",
+        "sentence": "Difficulty in Reproduction: Developers have struggled to reduce reported memory issues to simple, reproducible services .",
         "citation": "[2]",
         "label": "contradiction",
-        "confidence": 0.821
+        "confidence": 0.599
       },
       {
-        "sentence": "External Factors: In discussions regarding performance and resource usage, it has been noted that benchmarking results can be heavily influenced by factors such as caching strategies .",
-        "citation": "[6]",
+        "sentence": "Reported Symptoms: Users experiencing these issues describe scenarios where memory utilization climbs over time, seemingly without the garbage collector releasing objects, eventually leading to Out of Memory (OOM) errors in containers , .",
+        "citation": "[2]",
         "label": "neutral",
-        "confidence": 0.959
-      },
-      {
-        "sentence": "Additionally, the framework has a single maintainer, which can impact the speed at which complex issue investigations are addressed .",
-        "citation": "[6]",
-        "label": "neutral",
-        "confidence": 0.97
+        "confidence": 0.975
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 6,
+    "guard_true_positives": 0,
+    "guard_false_positives": 2,
+    "missed_hallucinations": 0,
+    "notes": "Both flagged claims confirmed SUPPORTED against issue #4649: 'Difficulty in Reproduction' matches agronholm/Atheuz asking for and failing to get a reproducible example; 'Reported Symptoms' (OOM, GC never releasing) matches the issue title and darkclouder's container-limit comment. Both false positives."
   },
   {
     "id": 7,
     "category": "performance",
     "question": "Why is there no built-in timing data for validation and serialization steps?",
-    "answer": "The provided context does not explain why there is no built-in timing data for validation and serialization steps in FastAPI.\n\nHowever, the discussion in Issue #701 indicates that providing timing data for tasks performed outside of user code is an area of interest [1]. In that discussion, it was suggested that per-request profiling could potentially be achieved by using `yappi` with a `contextvars` callback [1].",
+    "answer": "The provided context does not explain why there is no built-in timing data for validation and serialization steps in FastAPI. \n\nHowever, issue #701 discusses the need to provide timing data for processes that occur outside of user code [1]. Within that discussion, participants suggested that per-request profiling could potentially be achieved by using `contextvars` to override the context ID callback in `yappi` [1].",
     "sources": [
       {
         "label": "[1]",
@@ -451,19 +439,19 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 2,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims; unflagged content reads consistent with source."
   },
   {
     "id": 8,
     "category": "performance",
     "question": "What causes Gunicorn workers to hang and consume memory in FastAPI apps?",
-    "answer": "Based on the provided discussions, there is no single identified cause for Gunicorn workers hanging and consuming memory, and often these issues are attributed to external factors or specific application code rather than FastAPI itself [3, 4].\n\nKey factors discussed include:\n\n*   **Third-party code:** In one instance, a user reported that memory consumption issues were caused by their own third-party C++ code linked via `ctypes` [3]. The user noted that using `ctypes` made it difficult to manage memory ownership [3].\n*   **Application-level code:** Memory issues and hanging processes are often attributed to bugs within a user's own application code [4].\n*   **Endpoint definition:** One user noted encountering similar issues when an endpoint was defined with `def` (as opposed to `async def`) under high load [3].\n*   **Cloud or environment configuration:** Issues with workers not restarting or consuming excessive resources can be related to specific cloud or container (Docker/Kubernetes) configurations rather than the Gunicorn/FastAPI configuration itself [4].\n*   **Concurrency handling:** Gunicorn was designed for WSGI applications and expects threads to handle concurrency, whereas FastAPI uses an asynchronous event loop [4]. FastAPI already manages a threadpool for synchronous functions via `run_in_executor`, so users are advised against manually \"enabling\" threads in Gunicorn beyond setting the number of Uvicorn workers [4].\n\nWhen facing such issues, contributors suggest that the problem is frequently outside the scope of the FastAPI/Uvicorn framework and may require debugging at the application level [3, 4].",
+    "answer": "Based on the provided discussions, there is no single confirmed cause for Gunicorn workers hanging and consuming memory in FastAPI applications. Reported instances of these issues have been attributed to several factors:\n\n*   **Third-party code:** In some cases, memory growth and hanging processes were traced to 3rd party libraries, particularly those using `ctypes`, which can create uncertainty regarding memory ownership and garbage collection [3].\n*   **Application-level code:** Issues may stem from bugs within the user's specific application code rather than the FastAPI/Gunicorn framework itself [4].\n*   **Endpoint definitions:** One user noted encountering memory issues when using an endpoint defined with `def` under high load [3].\n*   **Configuration and environment:** Discussions suggest that issues related to workers not restarting or consuming excessive memory are often related to cloud configurations or idiosyncratic application deployments rather than Gunicorn/FastAPI configuration issues [4].\n\nIt is important to note that FastAPI already manages concurrency by running synchronous functions in a threadpool via `run_in_executor` [4]. Because Gunicorn was originally designed for WSGI and does not have a native notion of ASGI, it is recommended not to manually \"enable\" threads in Gunicorn beyond setting the number of Uvicorn workers [4]. For typical FastAPI applications, it is generally advised that process-based workers provide the best performance, as CPU is often a greater bottleneck than memory [2].",
     "sources": [
       {
         "label": "[1]",
@@ -504,49 +492,37 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "The user noted that using `ctypes` made it difficult to manage memory ownership .",
+        "sentence": "Endpoint definitions: One user noted encountering memory issues when using an endpoint defined with `def` under high load .",
         "citation": "[3]",
         "label": "neutral",
-        "confidence": 0.922
+        "confidence": 0.972
       },
       {
-        "sentence": "Application-level code: Memory issues and hanging processes are often attributed to bugs within a user's own application code .",
+        "sentence": "Configuration and environment: Discussions suggest that issues related to workers not restarting or consuming excessive memory are often related to cloud configurations or idiosyncratic application deployments rather than Gunicorn/FastAPI configuration issues .",
         "citation": "[4]",
         "label": "neutral",
-        "confidence": 0.779
+        "confidence": 0.811
       },
       {
-        "sentence": "Endpoint definition: One user noted encountering similar issues when an endpoint was defined with `def` (as opposed to `async def`) under high load .",
-        "citation": "[3]",
-        "label": "neutral",
-        "confidence": 0.952
-      },
-      {
-        "sentence": "whereas FastAPI uses an asynchronous event loop .",
+        "sentence": "It is important to note that FastAPI already manages concurrency by running synchronous functions in a threadpool via `run_in_executor` .",
         "citation": "[4]",
         "label": "neutral",
-        "confidence": 0.858
-      },
-      {
-        "sentence": "FastAPI already manages a threadpool for synchronous functions via `run_in_executor`, so users are advised against manually \"enabling\" threads in Gunicorn beyond setting the number of Uvicorn workers .",
-        "citation": "[4]",
-        "label": "contradiction",
-        "confidence": 0.773
+        "confidence": 0.796
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 7,
+    "guard_true_positives": 0,
+    "guard_false_positives": 3,
+    "missed_hallucinations": 0,
+    "notes": "All 3 flagged claims confirmed SUPPORTED. Issue #596: OpenCV/AKAZE 'def' memory-leak report matches claim 1. Issue #551: dmontagu's 'cloud config .../bugs in people's code' comment matches claim 2; tiangolo's explicit 'FastAPI takes care of running synchronous functions in a threadpool using run_in_executor' matches claim 3 near-verbatim. All false positives."
   },
   {
     "id": 9,
     "category": "performance",
     "question": "Why does using def instead of async def sometimes cause memory issues?",
-    "answer": "The memory issues observed when using `def` instead of `async def` in FastAPI are primarily linked to how FastAPI executes these functions in a `ThreadPoolExecutor` and how they interact with external libraries. Key insights include:\n\n*   **Threadpool Execution:** When an endpoint is defined with `def`, FastAPI runs it in a separate threadpool [3]. Some libraries, such as certain functions in OpenCV (e.g., `detectAndCompute`), may not play well with these threadpool calls, leading to memory leaks [4].\n*   **External Library Behavior:** It has been observed that specific low-level or blocking operations—such as certain OpenCV detectors—can cause memory to leak when executed via `def`, whereas using `async def` avoids the issue for the same function [4].\n*   **Memory Management:** There is discussion regarding whether the issue stems from how Python manages memory, as it does not always guarantee memory will be released back to the operating system [1]. Some users reported that while `def` might be intended for blocking operations, they experienced memory usage piling up when using it in contexts involving specific model operations or data processing [6].\n*   **Async as a Workaround:** Some users found that switching from `def` to `async def` resolved their memory issues [3, 4], likely because `async def` endpoints are not executed within the `ThreadPoolExecutor` [1]. However, it is noted that `def` is still a supported and valid way to process requests in a threadpool, and developers generally should not experience expanding memory in either case [3].",
+    "answer": "Using `def` instead of `async def` in FastAPI causes path operations to run in a `ThreadPoolExecutor` [1, 3]. While this is a supported way to handle requests, memory issues can arise in certain scenarios when using this thread pool [3]:\n\n* **Library Compatibility:** Some libraries may not play well with being called within a thread pool, potentially leading to memory leaks [4]. For example, one user reported that a specific OpenCV function (`detectAndCompute` using `AKAZE`) caused a memory leak when used in a `def` endpoint, but not in an `async def` endpoint [4]. \n* **Memory Management:** Python is not guaranteed to release memory back to the operating system [1]. If a function executed within the thread pool performs resource-intensive operations, it may not reuse memory as expected, leading to accumulation [1]. \n* **Alternative Explanations:** It is noted that if requests are made concurrently, this could lead to higher memory usage regardless of whether `def` or `async def` is used [1]. Additionally, some users have reported different memory behaviors between FastAPI and other frameworks like Flask, suggesting potential complexities in how FastAPI manages these thread-bound tasks [6].\n\nUltimately, the maintainers suggest that memory should not be expanding regardless of the choice of `def` or `async def`, and they encourage providing reproducible examples to isolate whether the issue lies within the user's specific library usage or the underlying execution model [3, 4].",
     "sources": [
       {
         "label": "[1]",
@@ -587,31 +563,25 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "Some users reported that while `def` might be intended for blocking operations, they experienced memory usage piling up when using it in contexts involving specific model operations or data processing .",
+        "sentence": "Additionally, some users have reported different memory behaviors between FastAPI and other frameworks like Flask, suggesting potential complexities in how FastAPI manages these thread-bound tasks .",
         "citation": "[6]",
         "label": "neutral",
-        "confidence": 0.918
-      },
-      {
-        "sentence": "However, it is noted that `def` is still a supported and valid way to process requests in a threadpool, and developers generally should not experience expanding memory in either case .",
-        "citation": "[3]",
-        "label": "neutral",
-        "confidence": 0.82
+        "confidence": 0.792
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 8,
+    "guard_true_positives": 0,
+    "guard_false_positives": 1,
+    "missed_hallucinations": 0,
+    "notes": "Flagged claim confirmed SUPPORTED. euri10's comment in issue #596: 'I run the same function under flask -> and the memory is constant (!) -> so for me there is something wrong with async' matches the Flask-vs-FastAPI claim. False positive."
   },
   {
     "id": 10,
     "category": "dependencies_di",
     "question": "How does FastAPI handle nested parameterized dependencies?",
-    "answer": "FastAPI does not have formal, built-in support for parameterized dependencies [1, 3]. According to project maintainers, the feature exists \"purely by coincidence\" because FastAPI allows classes that can be treated as callables to work with the `Depends` functionality [1, 3].\n\nBecause this is an emergent behavior rather than an explicit feature, FastAPI does not currently support nested parameterized dependencies [1]. Users have requested this functionality for use cases like generalized authentication logic—such as verifying different types of JWTs against specific database tables while reusing general logic—but the framework does not currently accommodate nesting them [1, 3].",
+    "answer": "FastAPI does not have explicit, built-in support for parameterized dependencies [1, 3]. The feature exists \"purely by coincidence\" because FastAPI's `Depends` functionality is designed to treat any Python class that can be called (like a function) as a dependency [1, 3]. \n\nConsequently, nested parameterized dependencies are not currently supported by the framework [1, 3]. While users have identified use cases for nesting them—such as generalized verification logic for different database objects—the framework does not natively facilitate passing parameterized sub-dependencies [1, 3].",
     "sources": [
       {
         "label": "[1]",
@@ -650,27 +620,20 @@
         "url": "https://github.com/fastapi/fastapi/issues/1889"
       }
     ],
-    "flagged_claims": [
-      {
-        "sentence": "Because this is an emergent behavior rather than an explicit feature, FastAPI does not currently support nested parameterized dependencies .",
-        "citation": "[1]",
-        "label": "neutral",
-        "confidence": 0.92
-      }
-    ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "flagged_claims": [],
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 4,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims. Verified against issue #1655 anyway (shared source with Q1) -- 'purely by coincidence' phrase confirmed verbatim, consistent with answer."
   },
   {
     "id": 11,
     "category": "dependencies_di",
     "question": "What are the tradeoffs between FastAPI's built-in dependency injection and third-party IoC containers?",
-    "answer": "The tradeoffs between FastAPI's built-in dependency injection (DI) and third-party IoC containers involve considerations of complexity, architectural patterns, and the goal of maintaining a simple learning curve.\n\n**FastAPI's Built-in DI (`Depends`):**\n* **Simplicity and Clarity:** Keeping dependencies manually wired in the lifespan or application state mirrors the \"composition root\" concept found in standalone DI systems [6]. This approach keeps the execution model clear and simple [6].\n* **Learning Curve:** A design goal for FastAPI is to remain \"fast to learn,\" requiring maintainers to be selective about adding new features that might introduce unnecessary complexity or boilerplate [4]. \n* **Scope:** The built-in mechanism is often sufficient for many use cases, and developers should clarify when their needs require a more advanced third-party solution [1].\n\n**Third-party IoC Containers:**\n* **Handling Complexity:** Libraries like Dishka are recommended for scenarios where developers need to resolve complex dependency graphs efficiently [1]. \n* **Design Principles:** Third-party libraries, such as Dishka, may offer full compliance with the Dependency Inversion Principle (DIP) and are often built to be async- and type-oriented, similar to FastAPI [1].\n* **Scalability:** These tools can provide extensive, flexible APIs designed for high scalability, even within a monolith architecture [1].\n* **Distributed Injection:** While some developers may prefer distributed dependency definitions (where dependencies are only applicable to specific groups of routes), this can become \"messy\" compared to centralized wiring [6].\n\nUltimately, the choice depends on whether the application requires the advanced scalability and complex graph resolution provided by specialized libraries, or if the built-in system sufficiently maintains the \"clear and simple\" execution model favored by FastAPI's design [1, 6].",
+    "answer": "The tradeoffs between FastAPI's built-in `Depends` mechanism and third-party IoC (Inversion of Control) containers involve considerations of complexity, scalability, and design philosophy:\n\n*   **Built-in `Depends`:** FastAPI's built-in dependency injection is designed to keep the execution model \"clear and simple\" [6]. By encouraging users to manually wire dependencies—such as within the application lifespan—it creates a single, well-identified \"composition root\" for the application [6]. Maintainers prioritize keeping FastAPI \"fast to learn,\" meaning new features must be carefully weighed against the goal of reducing boilerplate without adding unnecessary complexity [4]. \n*   **Third-party IoC containers:** Using a third-party library like Dishka can be appropriate when a project requires \"boundless scalability\" or handles complex dependency graphs that exceed the capabilities of the built-in mechanism [1]. \n*   **Design Philosophy:** A key trade-off mentioned by maintainers is the risk of \"distributed\" dependency configurations, which can become messy; conversely, centralized manual wiring maintains simplicity [6]. While some developers seek to reduce boilerplate through new annotations, maintainers often emphasize that features should not be added if the existing system can solve the problem easily without them [4].\n*   **Community Integration:** Third-party libraries like Dishka are often chosen because they complement FastAPI's focus on being \"async- and type-oriented\" and provide specific features—such as efficient resolution of complex dependency graphs—that help align with the Dependency Inversion Principle (DIP) [1].",
     "sources": [
       {
         "label": "[1]",
@@ -711,37 +674,43 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "Simplicity and Clarity: Keeping dependencies manually wired in the lifespan or application state mirrors the \"composition root\" concept found in standalone DI systems .",
+        "sentence": "Built-in `Depends`: FastAPI's built-in dependency injection is designed to keep the execution model \"clear and simple\" .",
         "citation": "[6]",
         "label": "neutral",
-        "confidence": 0.803
+        "confidence": 0.921
       },
       {
-        "sentence": "This approach keeps the execution model clear and simple .",
+        "sentence": "By encouraging users to manually wire dependencies—such as within the application lifespan—it creates a single, well-identified \"composition root\" for the application .",
         "citation": "[6]",
         "label": "neutral",
-        "confidence": 0.887
+        "confidence": 0.819
       },
       {
-        "sentence": "Learning Curve: A design goal for FastAPI is to remain \"fast to learn,\" requiring maintainers to be selective about adding new features that might introduce unnecessary complexity or boilerplate .",
+        "sentence": "Maintainers prioritize keeping FastAPI \"fast to learn,\" meaning new features must be carefully weighed against the goal of reducing boilerplate without adding unnecessary complexity .",
         "citation": "[4]",
         "label": "contradiction",
-        "confidence": 0.764
+        "confidence": 0.761
+      },
+      {
+        "sentence": "While some developers seek to reduce boilerplate through new annotations, maintainers often emphasize that features should not be added if the existing system can solve the problem easily without them .",
+        "citation": "[4]",
+        "label": "contradiction",
+        "confidence": 0.91
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
+    "total_citable_claims": 7,
+    "guard_true_positives": 1,
+    "guard_false_positives": 3,
+    "missed_hallucinations": 0,
+    "notes": "PR #9299: adriangb's comment contains near-verbatim 'keeps the execution model clear and simple' and 'composition root' language -> claims 1 & 2 false positives. PR #10898: YuriiMotov's reasoning ('I think we already have everything we need to solve it quickly... I don't think we need this feature') matches claim 4 -> false positive. Claim 3 ('fast to learn' framing) has no textual support anywhere in PR #10898 -- guard correctly flagged, true positive."
   },
   {
     "id": 12,
     "category": "dependencies_di",
     "question": "Why would someone use functools.lru_cache instead of a singleton for dependencies?",
-    "answer": "Someone might use `functools.lru_cache` on a function returning an instance of a class to achieve singleton-like behavior where the dependency returns the same instance [1].\n\nUsing this approach instead of a singleton class (e.g., using a metaclass) is preferred for several reasons:\n\n* **Separation of Concerns:** It avoids building \"singleton logic\" directly into the class itself, making it unnecessary to use metaclasses [1].\n* **Flexibility:** Unlike a forced singleton—which creates a single global instance—`lru_cache` provides a way to manage dependencies without preventing the user from creating separate instances on demand if desired [4].\n* **Control:** This method allows for dependencies that have a specific lifecycle (created at startup and cleaned up on shutdown) without the constraints of a traditional global singleton [4].\n\nAdditionally, it is important to note that FastAPI already includes a built-in caching mechanism for dependencies; however, this mechanism is designed to prevent a dependency from being called multiple times within the *same* request, rather than serving as a singleton that shares state across multiple requests [1].",
+    "answer": "Someone would use `functools.lru_cache` on a function returning an instance of a class to achieve singleton-like behavior within an application [1]. While a \"singleton\" (often implemented via a metaclass) forces a class to return the same global instance every time it is instantiated, using `lru_cache` provides a way to manage dependencies without relying on forced, global singleton logic [1, 4].\n\nThe distinction is that `lru_cache` allows for a dependency to be instantiated as needed while still ensuring the same instance is returned, whereas a true singleton pattern enforces a single global instance for the class [1, 4]. Furthermore, FastAPI's built-in dependency injection mechanism already includes a caching feature that prevents a dependency from being called multiple times within the *same* request; however, this is different from a singleton, which would maintain state across *multiple* requests [1].",
     "sources": [
       {
         "label": "[1]",
@@ -780,33 +749,20 @@
         "url": "https://github.com/fastapi/fastapi/pull/4645"
       }
     ],
-    "flagged_claims": [
-      {
-        "sentence": "Flexibility: Unlike a forced singleton—which creates a single global instance—`lru_cache` provides a way to manage dependencies without preventing the user from creating separate instances on demand if desired .",
-        "citation": "[4]",
-        "label": "contradiction",
-        "confidence": 0.723
-      },
-      {
-        "sentence": "Control: This method allows for dependencies that have a specific lifecycle (created at startup and cleaned up on shutdown) without the constraints of a traditional global singleton .",
-        "citation": "[4]",
-        "label": "contradiction",
-        "confidence": 0.619
-      }
-    ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "flagged_claims": [],
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 4,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims; consistent with issue #504 discussion (shared source)."
   },
   {
     "id": 13,
     "category": "auth_security",
     "question": "How is API key authentication implemented in FastAPI?",
-    "answer": "API key authentication in FastAPI is supported through the `APIKeyHeader` class, which can be imported from `fastapi.security.api_key` [4]. While FastAPI emphasizes OAuth2 for authentication, users can explicitly implement `APIKeyHeader` if they require an alternative approach [4].\n\nRegarding the implementation and naming of these security schemes:\n\n*   **Implementation:** Users define an instance of `APIKeyHeader` (or similar classes like `APIKeyQuery`) with a specified `name`, which represents the header field containing the token [2]. This instance is then used as a dependency in path operations using `Security` [2, 6].\n*   **Scheme Naming:** Historically, a bug existed where if multiple API key schemes were created, they could conflict because the default scheme name was based solely on the class name [2, 6]. This could cause one scheme to overwrite another [6]. To address this, it has been suggested that the `scheme_name` should include the specific token key name (e.g., `self.scheme_name = scheme_name or f\"{self.__class__.__name__}_{name}\"`) to allow for multiple, unique API key implementations within the same application [2].\n\nFor practical examples, users are directed to the FastAPI security documentation and the `full-stack-fastapi-postgresql` project generator [4]. Additionally, external articles and community channels are available for guidance on implementing authentication patterns [1, 4].",
+    "answer": "API key authentication in FastAPI is supported through the `APIKeyHeader` class, which can be imported from `fastapi.security.api_key` [4]. While FastAPI's security documentation and full-stack project generator primarily focus on OAuth2, the framework does support the use of custom `APIKeyHeader` implementations [4].\n\nRegarding the implementation details and known issues:\n\n*   **Implementation:** You can define an API key security scheme by creating an instance of `APIKeyHeader` (or similar classes like `APIKeyQuery`) and using it as a dependency within your path operations via `Security` [2, 4].\n*   **Scheme Names:** A known issue exists where multiple API key security schemes may conflict if they share the same default scheme name, which is derived from the class name [2, 6]. For example, if two `APIKeyHeader` instances are created, the second one can overwrite the first in the OpenAPI schema because they default to the same name [6].\n*   **Documentation:** Historically, users have found documentation for `APIKeyHeader` to be lacking compared to OAuth2 [4]. For those needing examples of how to implement headers for authentication, it is suggested to consult the official FastAPI security tutorials, external blog articles, or provided project generators [1, 4]. \n\nIf the provided security tutorials do not cover your specific needs for a custom `APIKeyHeader`, the functionality is still supported but may require implementing the logic based on the class structure [4].",
     "sources": [
       {
         "label": "[1]",
@@ -846,19 +802,19 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 7,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims."
   },
   {
     "id": 14,
     "category": "auth_security",
     "question": "What's the difference between using Security() and Depends() for authentication?",
-    "answer": "The provided context does not explicitly define the functional difference between `Security()` and `Depends()` regarding how they handle authentication internally, but it highlights specific use cases and behaviors:\n\n*   **OAuth2 Scopes:** `Security()` is used when handling dependencies that require specific OAuth2 scopes [1]. Changes to how these are cached were addressed in PR #2945 to ensure that dependencies correctly distinguish between different OAuth2 scopes when used in `Security()` [1].\n*   **Dependency Resolution:** Both `Depends()` and `Security()` are part of FastAPI’s dependency injection system [6]. `Depends()` is generally used to resolve dependencies in route functions or within other functions that are themselves resolved by `Depends()` [4].\n*   **Terminology:** There is a discussion regarding the UX of these parameters, suggesting that `scope` is a more natural choice for these functions, and noting that specifying these keywords right after the class helps namespace them appropriately [5].\n*   **Security Scheme Classes:** Security-related classes such as `OAuth2PasswordBearer`, `OAuth2AuthorizationCodeBearer`, and `APIKey` are used within the security system, and it has been clarified that these classes do not perform token validation themselves [3].\n\nThe provided documents do not offer a direct comparative explanation of the fundamental mechanical differences between the two, other than identifying `Security()` as the mechanism for handling scoped authentication [1].",
+    "answer": "Based on the provided context, the primary distinction between `Security()` and `Depends()` relates to the handling of OAuth2 scopes. `Security()` is used when dependencies are required to handle specific scopes [1]. \n\nWhen using `Security()` (or `Depends()`) with OAuth2 scopes, there have been historical technical challenges regarding how these dependencies are cached when multiple scopes are involved [1]. Furthermore, `Security()` is the mechanism used to define required scopes for an endpoint, as shown in examples where `Security(check_user_role_for_obj, scopes=['read_scope'])` is passed to the `dependencies` parameter of a route [1]. \n\nWhile `Depends()` is generally used for resolving dependencies within FastAPI route functions [4], `Security()` specifically enables the integration of security-related logic—such as role or privilege checking—that depends on OAuth2 scopes [1]. \n\nRegarding the general use of dependency injection in FastAPI:\n* `Depends()` must be used within FastAPI functions (like route handlers) or within other functions that are themselves resolved as dependencies [4].\n* It is considered better design to resolve dependencies at the route level and pass the results down through layers if necessary, rather than trying to resolve them manually inside arbitrary functions [4].",
     "sources": [
       {
         "label": "[1]",
@@ -899,25 +855,43 @@
     ],
     "flagged_claims": [
       {
-        "sentence": "`Depends()` is generally used to resolve dependencies in route functions or within other functions that are themselves resolved by `Depends()` .",
+        "sentence": "Furthermore, `Security()` is the mechanism used to define required scopes for an endpoint, as shown in examples where `Security(check_user_role_for_obj, scopes=['read_scope'])` is passed to the `dependencies` parameter of a route .",
+        "citation": "[1]",
+        "label": "contradiction",
+        "confidence": 0.658
+      },
+      {
+        "sentence": "While `Depends()` is generally used for resolving dependencies within FastAPI route functions , `Security()` specifically enables the integration of security-related logic—such as role or privilege checking—that depends on OAuth2 scopes .",
         "citation": "[4]",
         "label": "neutral",
-        "confidence": 0.922
+        "confidence": 0.774
+      },
+      {
+        "sentence": "`Depends()` must be used within FastAPI functions (like route handlers) or within other functions that are themselves resolved as dependencies .",
+        "citation": "[4]",
+        "label": "neutral",
+        "confidence": 0.892
+      },
+      {
+        "sentence": "It is considered better design to resolve dependencies at the route level and pass the results down through layers if necessary, rather than trying to resolve them manually inside arbitrary functions .",
+        "citation": "[4]",
+        "label": "neutral",
+        "confidence": 0.876
       }
     ],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
+    "total_citable_claims": 7,
+    "guard_true_positives": 1,
+    "guard_false_positives": 3,
+    "missed_hallucinations": 0,
+    "notes": "PR #2945 never contains a 'check_user_role_for_obj'/'read_scope' example or the 'dependencies' route-decorator pattern described -- this is a fabricated, invented example -- guard correctly flagged, true positive. Issue #1693: GabrielCarpr's comments directly support claims 2, 3, and 4 (Depends must be used within FastAPI functions or dependency chains; resolve at route level and pass down) -- all false positives."
   },
   {
     "id": 15,
     "category": "auth_security",
     "question": "How would you integrate an external OAuth2 provider like Hydra with FastAPI?",
-    "answer": "Integrating an external OAuth2 provider (such as Ory Hydra, Microsoft, or Google) with FastAPI involves implementing logic to validate tokens provided by the external service.\n\nBased on the provided discussions, here is the approach and the rationale behind certain design decisions:\n\n*   **Custom Implementation:** FastAPI does not have a built-in \"one-click\" integration for all external OAuth providers. Instead, developers are encouraged to use the existing security utilities (such as `OAuth2PasswordBearer`) and supplement them with an `async` function that verifies the token against the external service [5]. In this function, you would replace local JWT decoding with a request to your external provider to validate the token [5].\n*   **Documentation over Integration:** FastAPI relies on OpenAPI for authentication specifications [2]. Rather than building specific middleware or deep integrations for every external provider, the preference is to provide documentation and examples on how to handle these flows [3]. OAuth is considered a general web application concern rather than an exclusive FastAPI feature [3].\n*   **Exclusion of Third-Party Libraries:** There is an explicit design choice not to integrate libraries like Authlib directly into FastAPI. This decision was driven by concerns regarding the licensing model of those libraries—specifically, that their cost for commercial usage might inadvertently impose those same costs or requirements on FastAPI users [4].\n*   **Existing Resources:** Users looking to implement these flows are directed to the official FastAPI security tutorials regarding OAuth2 and JWT, which provide the foundational patterns needed to build custom validation logic [5].",
+    "answer": "Integrating an external OAuth2 provider (such as ORY Hydra, Microsoft, or Google) with FastAPI involves implementing logic to validate tokens provided by that service [1, 3]. While there have been requests for built-in support or middleware for such integrations, the general design approach has been to keep FastAPI focused on the core framework rather than including specific third-party OAuth integrations [3].\n\nKey considerations and implementation details from the provided discussions include:\n\n*   **Implementation Strategy:** Integration is typically achieved by using FastAPI's security utilities to receive the bearer token and then performing an asynchronous request to the external provider to validate the token [5]. A user suggested adapting the existing `get_current_user` dependency pattern to perform these external validation checks [5].\n*   **Documentation and OpenAPI:** FastAPI leverages OpenAPI, and users are encouraged to refer to the official Swagger documentation regarding OAuth2 for integration guidance [2]. Existing FastAPI tutorials on `simple-oauth2` and `oauth2-jwt` provide a foundation for these flows [5].\n*   **External Libraries:** While libraries like Authlib are suggested by the community for their simplicity, they have not been integrated into the FastAPI codebase. The primary reason cited for this is to avoid potential conflicts with commercial usage licenses associated with such libraries, ensuring FastAPI remains free to use without dependency on paid services [4].\n*   **Scope of Implementation:** OAuth is considered a concern for web applications in general rather than a feature specific solely to FastAPI, which is why developers often handle these integrations outside of the core framework [3].",
     "sources": [
       {
         "label": "[1]",
@@ -956,20 +930,27 @@
         "url": "https://github.com/fastapi/fastapi/pull/5052"
       }
     ],
-    "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "flagged_claims": [
+      {
+        "sentence": "The primary reason cited for this is to avoid potential conflicts with commercial usage licenses associated with such libraries, ensuring FastAPI remains free to use without dependency on paid services .",
+        "citation": "[4]",
+        "label": "neutral",
+        "confidence": 0.765
+      }
+    ],
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
+    "total_citable_claims": 8,
+    "guard_true_positives": 1,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "Issue #12 contains no mention of commercial licensing or paid-service concerns anywhere in the entire discussion around Authlib -- fully fabricated reasoning. Guard correctly flagged, true positive."
   },
   {
     "id": 16,
     "category": "testing_tooling",
     "question": "How does the UploadFile object behave when used inside a StreamingResponse?",
-    "answer": "The `UploadFile` object behavior changed in FastAPI v0.106.0, where it is now automatically closed after the request handler executes [1, 3, 4]. This behavior persists even if the `UploadFile` is passed into a `StreamingResponse` or used within background tasks, leading to issues where the file is closed before it can be processed [4, 5].\n\nUsers have identified that this change was introduced in a commit between versions 0.105.0 and 0.106.0, specifically impacting code in `fastapi/routing.py` that handles the request lifecycle [4].\n\nSuggested workarounds for this behavior include:\n*   **Reading the content beforehand:** If your logic allows, read the file's content into memory using `await file.read()` before initiating the `StreamingResponse` [2].\n*   **Using `deepcopy`:** Some users have reported success by using `deepcopy` on the `UploadFile` object when working with background tasks [5].\n*   **Downgrading:** Some users have opted to downgrade to version 0.105.0, which they identify as the simplest solution to avoid the issue [5].",
+    "answer": "In FastAPI versions 0.106.0 and later, `UploadFile` objects are automatically closed after the request handler finishes execution [4]. This behavior changed from version 0.105.0, where the files were not automatically closed [1, 3, 4].\n\nThis change has caused issues for users attempting to pass `UploadFile` objects into a `StreamingResponse` or background tasks, as the file is closed before the stream or task can finish processing it [3, 4, 5].\n\nSuggested workarounds discussed by the community include:\n*   **Reading the content beforehand:** If your use case allows, read the file's content into memory using `await file.read()` before initiating the `StreamingResponse` [2].\n*   **Using deepcopy:** Some users have reported success by using `deepcopy` on the `UploadFile` object when using background tasks [5].\n*   **Downgrading:** Some users have opted to downgrade to an earlier version of FastAPI as the simplest temporary solution [5]. \n\nThe closure of the file appears to be linked to a change in `fastapi/routing.py` introduced in version 0.106.0 [4].",
     "sources": [
       {
         "label": "[1]",
@@ -1009,19 +990,19 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 7,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims."
   },
   {
     "id": 17,
     "category": "testing_tooling",
     "question": "Why did upgrading FastAPI break background tasks that use UploadFile?",
-    "answer": "Upgrading to FastAPI v0.106.0 introduced a change in `fastapi/routing.py` that causes `UploadFile` objects to be closed immediately after the endpoint handler finishes executing [1]. \n\nPreviously, in v0.105.0, files remained open, allowing them to be processed by background tasks [1, 5]. However, the new behavior ensures the file is closed once the handler returns, which prevents background tasks from accessing the file data [1, 4, 6]. This effectively broke the pattern documented in the FastAPI guides, where a user could return a response (e.g., HTTP 202) while a file underwent slow, asynchronous processing in the background [4, 6].",
+    "answer": "Upgrading to FastAPI v0.106.0 introduced a change in `fastapi/routing.py` that automatically closes `UploadFile` objects after the endpoint handler finishes execution [1]. \n\nIn previous versions (v0.105.0 and earlier), this behavior did not occur, allowing users to pass `UploadFile` objects into background tasks for asynchronous processing [1, 5, 6]. Because the file is now closed immediately after the endpoint returns, attempting to access it within a background task results in failure, as the file is no longer available [1, 4, 6]. Users have noted that this behavior conflicts with the documentation for `BackgroundTasks`, which explicitly suggests returning an \"Accepted\" (HTTP 202) response while processing an uploaded file in the background [4, 6].",
     "sources": [
       {
         "label": "[1]",
@@ -1061,19 +1042,19 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 4,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims."
   },
   {
     "id": 18,
     "category": "testing_tooling",
     "question": "How can Socket.IO be integrated with a FastAPI application?",
-    "answer": "The provided documentation does not offer a definitive solution for integrating Socket.IO with FastAPI. \n\nA user attempted to integrate `socketio.AsyncServer` using `socketio.ASGIApp` by passing their `FastAPI` instance as the `other_asgi_app` [1]. However, this approach resulted in a traceback error from `python-engineio` when attempting to access FastAPI-defined endpoints [1]. Another user indicated that their query regarding how to expose a FastAPI socket for use with Ariadne subscriptions was not immediately clear from existing examples [2]. \n\nIf you are currently experiencing issues with this setup, the GitHub discussions suggest that you are not alone in finding the integration process challenging [1, 2]. The provided context does not contain further guidance or a resolved implementation strategy for Socket.IO integration.",
+    "answer": "Integrating Socket.IO with a FastAPI application can be complex, as demonstrated by attempts to wrap a `FastAPI` app within a `socketio.ASGIApp` [1].\n\nIn one reported attempt, a user configured their application as follows:\n\n```python\nfast_app = FastAPI(...)\nsio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')\napp = socketio.ASGIApp(\n    socketio_server=sio,\n    other_asgi_app=fast_app,\n    socketio_path='/api/notifications/socket.io/'\n)\n```\n\nWhile this configuration allows the user to connect to the Socket.IO endpoint, it causes a traceback error from `python-engineio` when attempting to access FastAPI-defined endpoints (such as those for documentation) [1].\n\nThe issue of integrating Socket.IO is noted as potentially belonging to Starlette rather than FastAPI directly [6]. There is no definitive guidance in the provided context on a successful implementation, and users struggling with socket integrations in FastAPI—such as those attempting to use Graphene subscriptions—have reported difficulties in exposing the necessary endpoints to facilitate communication [2].",
     "sources": [
       {
         "label": "[1]",
@@ -1113,19 +1094,19 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 4,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "No flagged claims."
   },
   {
     "id": 19,
     "category": "adversarial_edge",
     "question": "Why does FastAPI support quantum computing integration?",
-    "answer": "The provided context does not contain information regarding FastAPI's support for quantum computing integration. Therefore, I cannot answer your question based on the provided source material.",
+    "answer": "The provided context does not contain any information regarding FastAPI supporting quantum computing integration. Therefore, I cannot answer your question.",
     "sources": [
       {
         "label": "[1]",
@@ -1165,19 +1146,19 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 0,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "Adversarial nonsense question, correctly refused, no citable claims."
   },
   {
     "id": 20,
     "category": "adversarial_edge",
     "question": "What is the meaning of life according to FastAPI's documentation?",
-    "answer": "The provided context does not contain information regarding the meaning of life. Therefore, I cannot answer this question.",
+    "answer": "The provided context does not contain information regarding the meaning of life according to FastAPI's documentation.",
     "sources": [
       {
         "label": "[1]",
@@ -1217,12 +1198,12 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": null,
-    "manual_citation_ok": null,
-    "total_citable_claims": null,
-    "guard_true_positives": null,
-    "guard_false_positives": null,
-    "missed_hallucinations": null,
-    "notes": ""
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
+    "total_citable_claims": 0,
+    "guard_true_positives": 0,
+    "guard_false_positives": 0,
+    "missed_hallucinations": 0,
+    "notes": "Adversarial nonsense question, correctly refused, no citable claims."
   }
 ]
