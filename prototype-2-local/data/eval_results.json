@@ -56,8 +56,8 @@
         "confidence": 0.993
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 6,
     "guard_true_positives": 0,
     "guard_false_positives": 2,
@@ -115,8 +115,8 @@
         "confidence": 0.831
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 6,
     "guard_true_positives": 0,
     "guard_false_positives": 1,
@@ -174,8 +174,8 @@
         "confidence": 0.844
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 6,
     "guard_true_positives": 0,
     "guard_false_positives": 1,
@@ -239,8 +239,8 @@
         "confidence": 0.876
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
     "total_citable_claims": 5,
     "guard_true_positives": 1,
     "guard_false_positives": 1,
@@ -322,8 +322,8 @@
         "confidence": 0.995
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
     "total_citable_claims": 6,
     "guard_true_positives": 4,
     "guard_false_positives": 0,
@@ -387,8 +387,8 @@
         "confidence": 0.975
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 6,
     "guard_true_positives": 0,
     "guard_false_positives": 2,
@@ -439,8 +439,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 2,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -510,8 +510,8 @@
         "confidence": 0.796
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 7,
     "guard_true_positives": 0,
     "guard_false_positives": 3,
@@ -569,8 +569,8 @@
         "confidence": 0.792
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 8,
     "guard_true_positives": 0,
     "guard_false_positives": 1,
@@ -621,8 +621,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 4,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -698,8 +698,8 @@
         "confidence": 0.91
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
     "total_citable_claims": 7,
     "guard_true_positives": 1,
     "guard_false_positives": 3,
@@ -750,8 +750,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 4,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -802,8 +802,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 7,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -879,8 +879,8 @@
         "confidence": 0.876
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
     "total_citable_claims": 7,
     "guard_true_positives": 1,
     "guard_false_positives": 3,
@@ -938,8 +938,8 @@
         "confidence": 0.765
       }
     ],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "partial",
+    "manual_citation_ok": "no",
     "total_citable_claims": 8,
     "guard_true_positives": 1,
     "guard_false_positives": 0,
@@ -990,8 +990,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 7,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -1042,8 +1042,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 4,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -1094,8 +1094,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 4,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -1146,8 +1146,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 0,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
@@ -1198,8 +1198,8 @@
       }
     ],
     "flagged_claims": [],
-    "manual_correctness": true,
-    "manual_citation_ok": true,
+    "manual_correctness": "yes",
+    "manual_citation_ok": "yes",
     "total_citable_claims": 0,
     "guard_true_positives": 0,
     "guard_false_positives": 0,
