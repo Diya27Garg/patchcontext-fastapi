@@ -1,0 +1,26 @@
+[
+  {
+    "question": "Why does FastAPI use Depends() for dependency injection?",
+    "expected_sources": ["issue#504", "pull_request#3516", "pull_request#10898"]
+  },
+  {
+    "question": "How can I make a dependency behave like a singleton in FastAPI?",
+    "expected_sources": ["issue#504"]
+  },
+  {
+    "question": "How does FastAPI support caching dependencies for the lifetime of the app instead of just one request?",
+    "expected_sources": ["pull_request#3516"]
+  },
+  {
+    "question": "What is the Service() annotation in FastAPI and what problem does it solve?",
+    "expected_sources": ["pull_request#10898"]
+  },
+  {
+    "question": "How do I use an IoC container like Dishka with FastAPI instead of the built-in dependency injection?",
+    "expected_sources": ["pull_request#13628"]
+  },
+  {
+    "question": "How do nested parameterized dependencies work in FastAPI?",
+    "expected_sources": ["issue#1655"]
+  }
+]

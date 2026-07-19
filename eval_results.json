@@ -1,0 +1,108 @@
+[
+  {
+    "question": "Why does FastAPI use Depends() for dependency injection?",
+    "expected": [
+      "issue#504",
+      "pull_request#10898",
+      "pull_request#3516"
+    ],
+    "retrieved": [
+      "issue#1655",
+      "issue#504",
+      "pull_request#10898",
+      "pull_request#13628",
+      "pull_request#3516"
+    ],
+    "retrieval_hit": true,
+    "citation_used": true,
+    "flagged_count": 0,
+    "time_sec": 18.4
+  },
+  {
+    "question": "How can I make a dependency behave like a singleton in FastAPI?",
+    "expected": [
+      "issue#504"
+    ],
+    "retrieved": [
+      "issue#504",
+      "pull_request#13314",
+      "pull_request#13628",
+      "pull_request#13803",
+      "pull_request#13974"
+    ],
+    "retrieval_hit": true,
+    "citation_used": true,
+    "flagged_count": 0,
+    "time_sec": 11.8
+  },
+  {
+    "question": "How does FastAPI support caching dependencies for the lifetime of the app instead of just one request?",
+    "expected": [
+      "pull_request#3516"
+    ],
+    "retrieved": [
+      "pull_request#10409",
+      "pull_request#10411",
+      "pull_request#10420",
+      "pull_request#3516",
+      "pull_request#9299"
+    ],
+    "retrieval_hit": true,
+    "citation_used": true,
+    "flagged_count": 0,
+    "time_sec": 13.6
+  },
+  {
+    "question": "What is the Service() annotation in FastAPI and what problem does it solve?",
+    "expected": [
+      "pull_request#10898"
+    ],
+    "retrieved": [
+      "pull_request#10898",
+      "pull_request#13314",
+      "pull_request#4871",
+      "pull_request#5897",
+      "pull_request#9315",
+      "pull_request#9425"
+    ],
+    "retrieval_hit": true,
+    "citation_used": true,
+    "flagged_count": 1,
+    "time_sec": 14.6
+  },
+  {
+    "question": "How do I use an IoC container like Dishka with FastAPI instead of the built-in dependency injection?",
+    "expected": [
+      "pull_request#13628"
+    ],
+    "retrieved": [
+      "issue#4649",
+      "issue#504",
+      "pull_request#13628",
+      "pull_request#3516",
+      "pull_request#9299"
+    ],
+    "retrieval_hit": true,
+    "citation_used": true,
+    "flagged_count": 2,
+    "time_sec": 20.9
+  },
+  {
+    "question": "How do nested parameterized dependencies work in FastAPI?",
+    "expected": [
+      "issue#1655"
+    ],
+    "retrieved": [
+      "issue#1655",
+      "pull_request#10407",
+      "pull_request#10409",
+      "pull_request#10411",
+      "pull_request#10420",
+      "pull_request#11140"
+    ],
+    "retrieval_hit": true,
+    "citation_used": true,
+    "flagged_count": 0,
+    "time_sec": 16.2
+  }
+]
