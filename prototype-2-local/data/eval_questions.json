@@ -1,0 +1,27 @@
+[
+  {"id": 1, "category": "design_rationale", "question": "Why does FastAPI use Depends() for dependency injection?"},
+  {"id": 2, "category": "design_rationale", "question": "Why was there a debate about singleton dependencies?"},
+  {"id": 3, "category": "design_rationale", "question": "Why does FastAPI use startup and shutdown events instead of always using context managers?"},
+  {"id": 4, "category": "design_rationale", "question": "Why did FastAPI not add first-class msgpack response support?"},
+  {"id": 5, "category": "design_rationale", "question": "Why is CORS handled through middleware instead of being built into route decorators?"},
+
+  {"id": 6, "category": "performance", "question": "Why does memory usage grow over time in some FastAPI deployments?"},
+  {"id": 7, "category": "performance", "question": "Why is there no built-in timing data for validation and serialization steps?"},
+  {"id": 8, "category": "performance", "question": "What causes Gunicorn workers to hang and consume memory in FastAPI apps?"},
+  {"id": 9, "category": "performance", "question": "Why does using def instead of async def sometimes cause memory issues?"},
+
+  {"id": 10, "category": "dependencies_di", "question": "How does FastAPI handle nested parameterized dependencies?"},
+  {"id": 11, "category": "dependencies_di", "question": "What are the tradeoffs between FastAPI's built-in dependency injection and third-party IoC containers?"},
+  {"id": 12, "category": "dependencies_di", "question": "Why would someone use functools.lru_cache instead of a singleton for dependencies?"},
+
+  {"id": 13, "category": "auth_security", "question": "How is API key authentication implemented in FastAPI?"},
+  {"id": 14, "category": "auth_security", "question": "What's the difference between using Security() and Depends() for authentication?"},
+  {"id": 15, "category": "auth_security", "question": "How would you integrate an external OAuth2 provider like Hydra with FastAPI?"},
+
+  {"id": 16, "category": "testing_tooling", "question": "How does the UploadFile object behave when used inside a StreamingResponse?"},
+  {"id": 17, "category": "testing_tooling", "question": "Why did upgrading FastAPI break background tasks that use UploadFile?"},
+  {"id": 18, "category": "testing_tooling", "question": "How can Socket.IO be integrated with a FastAPI application?"},
+
+  {"id": 19, "category": "adversarial_edge", "question": "Why does FastAPI support quantum computing integration?"},
+  {"id": 20, "category": "adversarial_edge", "question": "What is the meaning of life according to FastAPI's documentation?"}
+]
