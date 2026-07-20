@@ -24,7 +24,7 @@ PatchContext is a Retrieval-Augmented Generation (RAG) system built over the
 threads. It answers design-rationale questions — such as *"why does FastAPI
 use `Depends()` for dependency injection?"* — with answers grounded directly
 in real developer discussions, and every claim in the answer is cited back to
-its exact commit SHA, pull request, or issue.
+its source issue, pull request, or (where available) commit.
 
 Rather than treating documentation as the source of truth, PatchContext treats
 the actual conversations between maintainers and contributors as the ground
@@ -52,11 +52,14 @@ patchcontext-fastapi/
     │   ├── eval_questions.json
     │   ├── eval_results.json
     │   └── processed/
-    │       └── chunks.json
+    │       ├── chunks.json
+    │       ├── faiss_index.bin
+    │       └── faiss_meta.json
     └── src/
         └── pipeline/
             ├── query.py
             ├── agentic_ask.py
+            ├── langchain_orchestrator.py
             ├── chunk_data.py
             └── faiss_index.py
 ```
@@ -70,11 +73,21 @@ patchcontext-fastapi/
 | Vector store | FAISS | Stores embeddings of chunked commit/PR/issue text for similarity search |
 | Retrieval | MMR (Maximal Marginal Relevance) | Selects diverse, non-redundant chunks instead of near-duplicate results |
 | Embeddings | Local `sentence-transformers` model | Runs on-device — removes dependency on an external embedding API |
-| Generation | Gemini (`gemini-flash-lite-latest`) via `google-genai` | Produces the final cited answer from retrieved context |
-| Hallucination guard | Local NLI (Natural Language Inference) model | Cross-checks every cited claim against its source text and flags unsupported ones |
-| Orchestration | LangChain / LangGraph | Coordinates the retrieval → generation → verification flow |
+| Generation | Gemini (`gemini-flash-lite-latest`, with model fallback) via `google-genai` | Produces the final cited answer from retrieved context |
+| Hallucination guard | Local NLI (Natural Language Inference) model, with embedding-similarity fallback | Cross-checks every cited claim against its source text and flags unsupported ones |
+| Orchestration | Plain sequential Python calls (`agentic_ask.py`) drive the production pipeline | Coordinates the retrieval → generation → verification → self-correction flow |
 | Agentic self-correction | `agentic_ask.py` | Re-verifies its own answer and can trigger a targeted correction pass |
 | UI | Streamlit (`app.py`) | Interactive front-end — question input, cited sources, self-correction trace, and per-session question history |
+
+**Note on LangChain:** a separate module, `src/pipeline/langchain_orchestrator.py`,
+implements the same retrieve → generate → verify sequence composed as a
+LangChain LCEL `Runnable` chain. It is a standalone, independently runnable
+script (`python src/pipeline/langchain_orchestrator.py`) that demonstrates the
+pipeline expressed through LangChain's composition pattern, but it is **not**
+currently wired into the production Streamlit app — the app calls
+`agentic_ask.py` directly. Porting the self-correction/rollback logic into the
+LangChain chain and switching `app.py` over to it is listed as a next step in
+Section 9.
 
 ### How the agentic self-correction loop works
 
@@ -166,7 +179,11 @@ under-flagging (recall is high). Reading the false positives directly showed
 a clear pattern: the NLI model frequently misfires on **negated phrasing**
 (e.g., "FastAPI does *not* have an explicit feature for X") and on **correct
 paraphrases with low lexical overlap** to the source text, treating both as
-contradictions even when the underlying meaning is accurate.
+contradictions even when the underlying meaning is accurate. A second, related
+pattern was **compound sentences** containing two distinct claims joined by a
+conjunction (e.g. "while X..., Y...") being judged as a single unit against
+one citation, when only one half of the sentence was actually about that
+source.
 
 The true positives, by contrast, were genuine catches — for example, a
 fabricated code example that does not appear anywhere in its cited pull
@@ -179,6 +196,17 @@ re-check to reduce false alarms.
 additional hallucinations among the unflagged claims during a skim-level
 check — it is not a claim that all 79 unflagged claims were exhaustively
 re-verified word-for-word against their sources.
+
+**A partial mitigation was implemented:** `split_into_claims()` in `query.py`
+now splits long compound sentences on internal clause boundaries (e.g. before
+"while", "however", "in contrast") before running the NLI check, so each
+clause is judged independently against its own citation rather than as one
+blob. Because the evaluation script (`run_eval.py`) regenerates live LLM
+answers on every run rather than caching them, re-running the evaluation after
+this fix produces genuinely different answer text — not just a re-split
+version of the same text — so this fix's precise quantitative impact on
+precision could not be cleanly isolated within this evaluation cycle. This is
+a known gap in the current eval methodology; see Section 9.
 
 ### Overall Answer Quality
 
@@ -217,17 +245,27 @@ GITHUB_TOKEN=your_github_personal_access_token
 GEMINI_API_KEY_2=your_gemini_api_key
 ```
 
-### Ask a single question
+### Ask a single question (interactive)
 
 ```bash
-python src/pipeline/query.py "why does fastapi use depends"
+python src/pipeline/query.py
 ```
+This starts an interactive prompt — type your question when asked, or `quit`
+to exit.
 
 ### Run the full agentic self-correction pipeline (interactive)
 
 ```bash
 python src/pipeline/agentic_ask.py
 ```
+
+### Run the standalone LangChain-orchestrated pipeline (interactive)
+
+```bash
+python src/pipeline/langchain_orchestrator.py
+```
+Demonstrates the same retrieve → generate → verify sequence composed as a
+LangChain LCEL chain. Not used by the live app (see Section 3).
 
 ### Reproduce the evaluation results
 
@@ -257,25 +295,47 @@ questions to try and a short primer on FastAPI itself.
 > way to reproduce results, since the hosted version depends on the deployed
 > environment's own resource limits.
 
-
 ---
 
 ## 8. Known Limitations
 
 - The hallucination guard currently has low precision (32%) and would
-  over-flag valid claims in practical use; a negation-aware refinement is the
-  clearest next step.
+  over-flag valid claims in practical use. A clause-splitting refinement was
+  added to reduce one specific failure mode (compound-sentence misjudgment,
+  see Section 6), but negation handling remains the clearest unaddressed gap.
 - A full RAGAs-suite evaluation (faithfulness, answer relevancy, context
   precision/recall) has not yet been run. The evaluation in Section 6 is a
   custom, guard-specific confusion matrix, not the full RAGAs benchmark
   originally scoped for this project.
+- The evaluation set covers 20 manually-verified questions. 15 additional
+  candidate questions (ids 21-35 in `data/eval_questions.json`) covering two
+  new categories — validation/serialization and middleware/routing — have
+  been drafted and confirmed to retrieve relevant chunks from the index, but
+  have not yet been manually annotated against their GitHub sources.
+- The evaluation script (`run_eval.py`) regenerates live LLM answers on every
+  run rather than caching them, so re-running it invalidates any existing
+  manual annotations tied to the previous answer text. A more robust
+  evaluation pipeline would separate answer generation/caching from the
+  manual-annotation layer.
+- `src/pipeline/langchain_orchestrator.py` is a working, standalone LangChain
+  LCEL implementation of the retrieve → generate → verify sequence, but is not
+  wired into the production app and does not yet include the self-correction/
+  rollback step that `agentic_ask.py` implements.
 - `prototype-1-quota-gemini/` is preserved for transparency only and is not
   maintained or intended to be run going forward.
 
 ## 9. What Would Come Next
 
 - Add a negation-aware or paraphrase-tolerant re-check step to the guard to
-  reduce false positives.
+  further reduce false positives.
+- Cache/version LLM-generated eval answers separately from manual annotations,
+  so re-running the eval script doesn't invalidate prior verification work.
+- Manually annotate the 15 drafted expansion questions (ids 21-35) to grow the
+  verified evaluation set from 20 to 35 questions across 7 categories.
 - Run the full RAGAs evaluation suite across a larger benchmark.
+- Port the self-correction/rollback logic into
+  `langchain_orchestrator.py` and switch `app.py` to use it, making LangChain
+  the actual production orchestration layer rather than a standalone
+  demonstration.
 - Expand manual verification of unflagged claims beyond a quick skim, to
   tighten confidence in the recall figure.
