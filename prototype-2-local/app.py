@@ -66,6 +66,35 @@ FASTAPI_NOTE = (
     "not just arbitrary framework choices."
 )
 
+SOURCE_TYPE_ICONS = {
+    "issue": "🐞",
+    "pull_request": "🔀",
+    "commit": "📌",
+}
+SOURCE_TYPE_LABELS = {
+    "issue": "Issue",
+    "pull_request": "PR",
+    "commit": "Commit",
+}
+
+
+def format_source_line(s: dict) -> str:
+    """Build a readable, descriptive line for a source, e.g.
+    '🐞 Issue #504 — Dependency Injection - Singleton?'"""
+    stype = s.get("source_type")
+    icon = SOURCE_TYPE_ICONS.get(stype, "📄")
+    type_label = SOURCE_TYPE_LABELS.get(stype, stype or "Source")
+    number = s.get("source_number")
+    title = (s.get("title") or "").strip()
+
+    base = f"{type_label} #{number}" if number is not None else type_label
+
+    if title:
+        short_title = title if len(title) <= 80 else title[:77] + "…"
+        return f"{icon} **{base}** — {short_title}"
+    return f"{icon} **{base}**"
+
+
 # ============================================================
 # Helper: run a question through the backend with a bit of personality
 # ============================================================
@@ -166,24 +195,25 @@ else:
             st.subheader("Self-correction trace")
             if rolled_back:
                 st.info(
-                    "The model revised its answer, checked the revision, and rolled "
+                    "🔄 The model revised its answer, checked the revision, and rolled "
                     "back to the original because it was measurably worse."
                 )
             elif corrected:
-                st.success("The model revised and improved its answer after self-checking.")
+                st.success("✅ The model revised and improved its answer after self-checking.")
             else:
                 st.caption("No revision was needed — first-pass answer was accepted as-is.")
 
-        # ---------- Sources ----------
+        # ---------- Sources (descriptive, clickable) ----------
         sources = trace.get("sources", [])
         if sources:
             st.divider()
-            st.subheader("Sources")
+            st.subheader(f"Sources ({len(sources)})")
             for s in sources:
                 if isinstance(s, dict):
-                    label = s.get("label") or s.get("title") or s.get("url", "source")
+                    line = format_source_line(s)
                     url = s.get("url", "#")
-                    st.markdown(f"- [{label}]({url})")
+                    label = s.get("label", "")
+                    st.markdown(f"{label} {line}  \n[{url}]({url})", unsafe_allow_html=False)
                 else:
                     st.markdown(f"- {s}")
 
@@ -191,9 +221,26 @@ else:
         flags = trace.get("flagged_claims") or trace.get("hallucination_flags")
         if flags:
             st.divider()
-            st.subheader("⚠️ Flagged by hallucination guard")
+            st.subheader(f"⚠️ Flagged by hallucination guard ({len(flags)})")
+            st.caption(
+                "These specific claims were checked against their cited source and the "
+                "guard could not confirm they're well-supported. This doesn't necessarily "
+                "mean they're wrong — see the project README for the guard's measured "
+                "precision on this dataset."
+            )
             for f in flags:
-                st.warning(f)
+                if isinstance(f, dict):
+                    citation = f.get("citation", "")
+                    sentence = f.get("sentence", "")
+                    label = f.get("label", "")
+                    confidence = f.get("confidence")
+                    conf_str = f" · confidence {confidence:.2f}" if isinstance(confidence, (int, float)) else ""
+                    st.warning(f"**{citation}** \"{sentence}\"  \n*guard label: {label}{conf_str}*")
+                else:
+                    st.warning(str(f))
+        elif trace.get("final_flagged") == [] and sources:
+            st.divider()
+            st.caption("✅ No claims were flagged — all cited statements appear well-supported by their sources.")
 
     # ---------- Feedback + next question ----------
     st.divider()
