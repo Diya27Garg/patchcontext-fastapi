@@ -4,7 +4,8 @@ os.environ["HF_HUB_DISABLE_XET"] = "1"
 import json
 import sys
 
-sys.path.insert(0, "src/pipeline")
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "pipeline"))
 from query import ask  # noqa: E402
 
 QUESTIONS_PATH = "data/eval_questions.json"

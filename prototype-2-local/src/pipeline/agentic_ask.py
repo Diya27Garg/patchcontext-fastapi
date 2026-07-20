@@ -3,7 +3,8 @@ import os
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 
 import sys
-sys.path.insert(0, "src/pipeline")
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from query import (  # noqa: E402
     load_chunks, load_faiss, retrieve, generate_answer, check_claims,

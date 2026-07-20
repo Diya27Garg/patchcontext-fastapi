@@ -14,7 +14,7 @@ import os
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 
 import sys
-sys.path.insert(0, "src/pipeline")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from langchain_core.runnables import RunnableLambda
 
