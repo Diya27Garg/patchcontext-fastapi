@@ -231,8 +231,28 @@ Run `python compute_metrics.py` inside `prototype-2-local/` to reproduce both
 the confusion matrix and this answer-quality breakdown together.
 
 ---
+---
 
-## 7. Setup & Running (Prototype 2)
+## 7. Adversarial Robustness
+
+The system is tested against out-of-scope and nonsensical questions to
+confirm it refuses to fabricate an answer rather than inventing one just to
+have something to say:
+
+**"Why does FastAPI support quantum computing integration?"**
+![Quantum computing refusal](prototype-2-local/docs/screenshots/adversarial_quantum.png)
+
+**"What is the meaning of life according to FastAPI's documentation?"**
+![Meaning of life refusal](prototype-2-local/docs/screenshots/adversarial_meaning_of_life.png)
+
+Both questions correctly return an explicit "the provided context does not
+contain this information" response instead of a hallucinated answer — this
+behavior is also reflected in the evaluation results in Section 6, where both
+adversarial-edge questions in the benchmark had zero flagged claims (nothing
+to flag, since nothing was fabricated).
+
+---
+## 8. Setup & Running (Prototype 2)
 
 ```bash
 cd prototype-2-local
@@ -297,7 +317,7 @@ questions to try and a short primer on FastAPI itself.
 
 ---
 
-## 8. Known Limitations
+## 9. Known Limitations
 
 - The hallucination guard currently has low precision (32%) and would
   over-flag valid claims in practical use. A clause-splitting refinement was
@@ -324,7 +344,7 @@ questions to try and a short primer on FastAPI itself.
 - `prototype-1-quota-gemini/` is preserved for transparency only and is not
   maintained or intended to be run going forward.
 
-## 9. What Would Come Next
+## 10. What Would Come Next
 
 - Add a negation-aware or paraphrase-tolerant re-check step to the guard to
   further reduce false positives.
