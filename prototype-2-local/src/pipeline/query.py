@@ -18,6 +18,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 CHUNKS_PATH = os.path.join(BASE_DIR, "data", "processed", "chunks.json")
 FAISS_INDEX_PATH = os.path.join(BASE_DIR, "data", "processed", "faiss_index.bin")
 FAISS_META_PATH = os.path.join(BASE_DIR, "data", "processed", "faiss_meta.json")
+
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 GEN_MODEL_CANDIDATES = [
     "gemini-flash-lite-latest",
