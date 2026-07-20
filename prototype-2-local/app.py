@@ -7,8 +7,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, "src", "pipeline"))
 import time
 import random
 import streamlit as st
-from agentic_ask import ask_with_self_correction
-
+from langchain_orchestrator import ask_via_langchain
 # ============================================================
 # Page setup
 # ============================================================
@@ -108,7 +107,7 @@ def run_question(question: str):
 
     try:
         with st.spinner("Putting together a grounded answer…"):
-            trace = ask_with_self_correction(question)
+            trace = ask_via_langchain(question)
         error = None
     except Exception as e:
         trace = None
